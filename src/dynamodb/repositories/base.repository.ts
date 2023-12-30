@@ -1,12 +1,17 @@
+import { PutItemCommand } from '@aws-sdk/client-dynamodb';
 import {
   DynamoDBDocumentClient,
   GetCommand,
   QueryCommand,
   QueryCommandInput,
   QueryCommandOutput,
-  ScanCommand
+  ScanCommand,
+  UpdateCommand,
+  UpdateCommandInput
 } from '@aws-sdk/lib-dynamodb';
-import { Injectable } from '@nestjs/common';
+import { marshall } from '@aws-sdk/util-dynamodb';
+import { randomUUID } from 'crypto';
+import { Logger, Injectable } from '@nestjs/common';
 
 type ArrayElement<T> = T extends Array<infer R> ? R : never;
 
@@ -30,6 +35,7 @@ type QueryOutput<TModel, TParams> = TParams extends {
 
 @Injectable()
 export abstract class BaseRepository<T> {
+  readonly logger = new Logger(BaseRepository.name);
   protected abstract tableName: string;
 
   constructor(private readonly docClient: DynamoDBDocumentClient) { }
@@ -90,7 +96,7 @@ export abstract class BaseRepository<T> {
         ...(queryParams.ExpressionAttributeNames ?? {}),
       };
     }
-
+    this.logger.log(JSON.stringify(queryParams));
     const result: QueryCommandOutput[] = [];
 
     do {
@@ -108,7 +114,70 @@ export abstract class BaseRepository<T> {
       TableName: this.tableName,
     };
     const results = await this.docClient.send(new ScanCommand(params));
-    console.log(results.Items);
+    this.logger.log(results.Items);
     return results.Items as any[];
+  }
+
+  async create(json: any,key:string) {
+    const id = randomUUID().toString()
+    this.docClient.send(new PutItemCommand({
+      TableName: this.tableName,
+      Item: {
+        "id": { S: id },
+        [key]: { M: marshall(json) }
+      },
+    })).then((data) => {
+      this.logger.log(data);
+      return data;
+    }).catch((error) => {
+      this.logger.error(error);
+    });
+  }
+
+  async updateItem(item: any, type:string, key?: string) {
+    if(!key) key = randomUUID().toString()
+    const pk = 'id';
+    const itemKeys = Object.keys(item).filter(k => k !== pk);
+    const params: UpdateCommandInput = {
+      TableName: this.tableName,
+      UpdateExpression: `SET ${itemKeys.map((k, index) => `#type.#field${index} = :value${index}`).join(', ')}`,
+      ExpressionAttributeNames: itemKeys.reduce((accumulator, k, index) => ({
+        ...accumulator,
+        [`#field${index}`]: k
+      }), {[`#type`]: type}),
+      ExpressionAttributeValues: itemKeys.reduce((accumulator, k, index) => ({
+        ...accumulator,
+        [`:value${index}`]: item[k]
+      }), {}),
+      Key: {
+        [pk]: key
+      },
+      ReturnValues: 'ALL_NEW'
+    };
+    this.logger.log(JSON.stringify(params));
+    return await this.docClient.send(new UpdateCommand(params))
+  }
+
+  async updateMap(item: any, type:string, id: string, key?: string) {
+    if(!key) key = randomUUID().toString()
+    const pk = 'id';
+    const itemKeys = Object.keys(item).filter(k => k !== pk);
+    const params: UpdateCommandInput = {
+      TableName: this.tableName,
+      UpdateExpression: `SET #type.#key = :value`,
+      ExpressionAttributeValues: {
+        ":value": {...item},
+      },
+      ExpressionAttributeNames: {
+       "#type": type,
+        "#key": key
+        },
+      Key: {
+        [pk]: id
+      },
+      ReturnValues: 'ALL_NEW'
+    };
+    this.logger.log(JSON.stringify(params));
+    return await this.docClient.send(new UpdateCommand(params))
   }
 }

@@ -1,7 +1,11 @@
 import { Module } from '@nestjs/common';
-import { DemoController } from './demo.controller';
+import { CustomerController } from './controllers/customer.controller';
+import { LabelsController } from './controllers/label.controller';
+import { ExtractionsController } from './controllers/extractions.controller';
+import { FileS3Serivce } from './services/files3.service';
 
 @Module({
-    controllers: [DemoController],
+    controllers: [CustomerController, LabelsController,ExtractionsController],
+    providers: [FileS3Serivce],
 })
 export class DemoModule {}
