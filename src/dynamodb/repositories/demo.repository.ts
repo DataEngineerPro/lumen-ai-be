@@ -53,4 +53,8 @@ export class DemoRepository extends BaseRepository<Record> {
   ): Promise<any> {
     return this.updateMap(extractions, UpdateEntity.Extractions, id, key);
   }
+
+  bulkLoadDocuments(documents: any, id: string): Promise<any> {
+    return this.bulkLoadItem(documents, UpdateEntity.Document, id);
+  }
 }

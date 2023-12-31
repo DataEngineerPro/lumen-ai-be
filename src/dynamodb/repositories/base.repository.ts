@@ -204,4 +204,35 @@ export abstract class BaseRepository<T> {
     this.logger.log(JSON.stringify(params));
     return await this.docClient.send(new UpdateCommand(params));
   }
+
+  async bulkLoadItem(item: any, type: string, id: string) {
+    const pk = 'id';
+    const itemKeys = Object.keys(item);
+    const params: UpdateCommandInput = {
+      TableName: this.tableName,
+      UpdateExpression: `SET ${itemKeys
+        .map((k, index) => `#type.#field${index} = :value${index}`)
+        .join(', ')}`,
+      ExpressionAttributeNames: itemKeys.reduce(
+        (accumulator, k, index) => ({
+          ...accumulator,
+          [`#field${index}`]: k,
+        }),
+        { '#type': type },
+      ),
+      ExpressionAttributeValues: itemKeys.reduce(
+        (accumulator, k, index) => ({
+          ...accumulator,
+          [`:value${index}`]: item[k],
+        }),
+        {},
+      ),
+      Key: {
+        [pk]: id,
+      },
+      ReturnValues: 'ALL_NEW',
+    };
+    this.logger.log(JSON.stringify(params));
+    return await this.docClient.send(new UpdateCommand(params));
+  }
 }

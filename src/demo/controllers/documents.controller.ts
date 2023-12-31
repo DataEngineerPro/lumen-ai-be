@@ -88,6 +88,37 @@ export class DocumentsController {
     if (s3Response) {
       let s3Uri = `s3://${this.fileService.Bucket}/${id}/${originalname}`;
       this.logger.log(s3Uri);
+      if (file.mimetype === 'application/pdf') {
+        let documentsData: { [k: string]: any } = {};
+        return this.httpService.axiosRef
+          .get(
+            'https://lumenai.eucloid.com/api/processpdf?url=' +
+              encodeURIComponent(s3Uri),
+          )
+          .then((response) => response.data)
+          .then(async (data: string[]) => {
+            this.logger.log(data);
+            for (let i = 0; i < data.length; i++) {
+              let index = data[i].lastIndexOf('.');
+              let fileName = data[i];
+              if (index > -1) {
+                fileName =
+                  data[i].substring(0, index) +
+                  '_bw' +
+                  data[i].substring(index);
+              }
+              this.logger.log('Processing : ' + data[i] + ' got : ' + fileName);
+              let documentData: Document = {
+                url: fileName,
+                displayUrl: data[i],
+                page: i.toString(),
+              };
+              documentsData[i.toString()] = documentData;
+            }
+            this.logger.log(documentsData);
+            return this.repository.bulkLoadDocuments(documentsData, id);
+          });
+      }
       return this.httpService.axiosRef
         .get(
           'https://lumenai.eucloid.com/api/processimage?url=' +
