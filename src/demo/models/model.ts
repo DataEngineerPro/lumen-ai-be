@@ -1,84 +1,80 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class Contact {
+  @ApiProperty()
+  name: string;
 
-    @ApiProperty()
-    name: string;
+  @ApiProperty()
+  workemail: string;
 
-    @ApiProperty()
-    workemail: string;
+  @ApiProperty()
+  phone: string;
 
-    @ApiProperty()
-    phone: string;
+  @ApiProperty()
+  company: string;
 
-    @ApiProperty()
-    company: string;
+  @ApiProperty()
+  country: string;
 
-    @ApiProperty()
-    country: string;
+  @ApiProperty()
+  usecase?: string;
 
-    @ApiProperty()
-    usecase?: string;
-
-    @ApiProperty()
-    comments?: string;
-
+  @ApiProperty()
+  comments?: string;
 }
 
 export class Label {
-    @ApiProperty()
-    name: string;
+  @ApiProperty()
+  name: string;
 
-    @ApiProperty()
-    color: string;
-
+  @ApiProperty()
+  color: string;
 }
 
 export class Document {
-    @ApiProperty()
-    page: string;
+  @ApiProperty()
+  page: string;
 
-    @ApiProperty()
-    displayUrl: string;
+  @ApiProperty()
+  displayUrl: string;
 
-    @ApiProperty()
-    url: string;
+  @ApiProperty()
+  url: string;
 }
 
 export class Extractions {
-    @ApiProperty()
-    label: string;
+  @ApiProperty()
+  label: string;
 
-    @ApiProperty()
-    document: string;
+  @ApiProperty()
+  document: string;
 
-    @ApiProperty()
-    left: number;
+  @ApiProperty()
+  left: number;
 
-    @ApiProperty()
-    top: number;
+  @ApiProperty()
+  top: number;
 
+  @ApiProperty()
+  height: number;
 
-    @ApiProperty()
-    height: number;
+  @ApiProperty()
+  width: number;
 
-    @ApiProperty()
-    width: number;
+  @ApiProperty()
+  extractedText: string;
 
-    @ApiProperty()
-    extractedText: string;
+  @ApiProperty()
+  userEnteredText: string;
 
-    @ApiProperty()
-    userEnteredText: string;
-
-    @ApiProperty()
-    comments: string;
+  @ApiProperty()
+  comments: string;
 }
 
 export class Record {
-    id: string;
-    customer: Contact;
-    labels: { [id: string]: Label };
-    documents: { [id: string]: Document };
-    extractions: { [id: string]: Extractions};
+  id: string;
+  customer: Contact;
+  labels: { [id: string]: Label };
+  documents: { [id: string]: Document };
+  extractions: { [id: string]: Extractions };
 }

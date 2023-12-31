@@ -11,12 +11,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     DynamodbModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        region: config.get<string>('DYNAMODB_REGION'),
+        region: config.get<string>('REGION'),
         endpoint: config.get<string>('DYNAMODB_ENDPOINT'),
         credentials: {
-          accessKeyId: config.get<string>('AWS_ACCESS_KEY_ID',''),
-          secretAccessKey: config.get<string>('AWS_SECRET_KEY',''),
-        }
+          accessKeyId: config.get<string>('AWS_ACCESS_KEY_ID', ''),
+          secretAccessKey: config.get<string>('AWS_SECRET_KEY', ''),
+        },
       }),
     }),
     DemoModule,
@@ -24,4 +24,4 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}
