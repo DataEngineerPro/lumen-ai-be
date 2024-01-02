@@ -1,20 +1,24 @@
 import {
+    Body,
     Controller,
     Get,
     NotFoundException,
     Param,
-    ParseIntPipe,
+    Post,
+    Put,
 } from '@nestjs/common';
 import {
     DemoRepository,
     Demo,
-} from '../dynamodb/repositories/demo.repository';
+} from '../../dynamodb/repositories/demo.repository';
 
-@Controller('demo')
-export class DemoController {
+import {Contact} from '../models/model'
+
+@Controller('customer')
+export class CustomerController {
     constructor(private readonly repository: DemoRepository) { }
 
-    @Get('/:id')
+    @Get(':id')
     async get(
         @Param('id') id: string,
     ): Promise<Demo> {
@@ -28,9 +32,7 @@ export class DemoController {
     }
 
     @Get()
-    async getAll(
-       
-    ): Promise<Demo[]> {
+    async getAll(): Promise<Demo[]> {
         const item = await this.repository.getAll();
 
         if (item) {
@@ -38,5 +40,15 @@ export class DemoController {
         }
 
         throw new NotFoundException('Invalid!');
+    }
+
+    @Post()
+    async createContact(@Body() contact:Contact): Promise<any>{
+        return this.repository.createContact(contact)
+    }
+
+    @Put(':id')
+    async updateContact(@Param('id') id:string, @Body() contact:Contact): Promise<any>{
+        return this.repository.updateContact(contact,id)
     }
 }

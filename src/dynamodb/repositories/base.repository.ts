@@ -1,12 +1,17 @@
+import { PutItemCommand } from '@aws-sdk/client-dynamodb';
 import {
   DynamoDBDocumentClient,
   GetCommand,
   QueryCommand,
   QueryCommandInput,
   QueryCommandOutput,
-  ScanCommand
+  ScanCommand,
+  UpdateCommand,
+  UpdateCommandInput,
 } from '@aws-sdk/lib-dynamodb';
-import { Injectable } from '@nestjs/common';
+import { marshall } from '@aws-sdk/util-dynamodb';
+import { randomUUID } from 'crypto';
+import { Logger, Injectable } from '@nestjs/common';
 
 type ArrayElement<T> = T extends Array<infer R> ? R : never;
 
@@ -24,15 +29,16 @@ type QueryOutput<TModel, TParams> = TParams extends {
   ProjectionExpression: infer TProjection;
 }
   ? TProjection extends Array<keyof TModel>
-  ? Array<Pick<TModel, Extract<ArrayElement<TProjection>, keyof TModel>>>
-  : never
+    ? Array<Pick<TModel, Extract<ArrayElement<TProjection>, keyof TModel>>>
+    : never
   : TModel[];
 
 @Injectable()
 export abstract class BaseRepository<T> {
+  readonly logger = new Logger(BaseRepository.name);
   protected abstract tableName: string;
 
-  constructor(private readonly docClient: DynamoDBDocumentClient) { }
+  constructor(private readonly docClient: DynamoDBDocumentClient) {}
 
   async get(key: Partial<T>): Promise<T | null> {
     const { Item } = await this.docClient.send(
@@ -83,14 +89,17 @@ export abstract class BaseRepository<T> {
         (p) => `#${String(p)}`,
       ).join(',');
       queryParams.ExpressionAttributeNames = {
-        ...params.ProjectionExpression.reduce((acc, p) => {
-          acc[`#${String(p)}`] = String(p);
-          return acc;
-        }, {} as Record<string, string>),
+        ...params.ProjectionExpression.reduce(
+          (acc, p) => {
+            acc[`#${String(p)}`] = String(p);
+            return acc;
+          },
+          {} as Record<string, string>,
+        ),
         ...(queryParams.ExpressionAttributeNames ?? {}),
       };
     }
-
+    this.logger.log(JSON.stringify(queryParams));
     const result: QueryCommandOutput[] = [];
 
     do {
@@ -102,13 +111,159 @@ export abstract class BaseRepository<T> {
     return result;
   }
 
-
   async getAllDocuments() {
     const params = {
       TableName: this.tableName,
     };
     const results = await this.docClient.send(new ScanCommand(params));
-    console.log(results.Items);
+    this.logger.log(results.Items);
     return results.Items as any[];
+  }
+
+  async create(contact: any) {
+    const id = randomUUID().toString();
+    return this.docClient
+      .send(
+        new PutItemCommand({
+          TableName: this.tableName,
+          Item: {
+            id: { S: id },
+            customer: { M: marshall(contact) },
+            documents: {
+              M: {},
+            },
+            labels: {
+              M: {},
+            },
+            extractions: {
+              M: {},
+            },
+          },
+        }),
+      )
+      .then((data) => {
+        this.logger.log(data);
+        return id;
+      })
+      .catch((error) => {
+        this.logger.error(error);
+      });
+  }
+
+  async updateItem(item: any, type: string, key?: string) {
+    if (!key) key = randomUUID().toString();
+    const pk = 'id';
+    const itemKeys = Object.keys(item).filter((k) => k !== pk);
+    const params: UpdateCommandInput = {
+      TableName: this.tableName,
+      UpdateExpression: `SET ${itemKeys
+        .map((k, index) => `#type.#field${index} = :value${index}`)
+        .join(', ')}`,
+      ExpressionAttributeNames: itemKeys.reduce(
+        (accumulator, k, index) => ({
+          ...accumulator,
+          [`#field${index}`]: k,
+        }),
+        { [`#type`]: type },
+      ),
+      ExpressionAttributeValues: itemKeys.reduce(
+        (accumulator, k, index) => ({
+          ...accumulator,
+          [`:value${index}`]: item[k],
+        }),
+        {},
+      ),
+      Key: {
+        [pk]: key,
+      },
+      ReturnValues: 'ALL_NEW',
+    };
+    this.logger.log(JSON.stringify(params));
+    return await this.docClient.send(new UpdateCommand(params));
+  }
+
+  async updateMapItem(item: any, type: string, id: string, key: string) {
+    const pk = 'id';
+    const itemKeys = Object.keys(item).filter((k) => k !== pk);
+    const params: UpdateCommandInput = {
+      TableName: this.tableName,
+      UpdateExpression: `SET ${itemKeys
+        .map((k, index) => `#type.#key.#field${index} = :value${index}`)
+        .join(', ')}`,
+      ExpressionAttributeNames: itemKeys.reduce(
+        (accumulator, k, index) => ({
+          ...accumulator,
+          [`#field${index}`]: k,
+        }),
+        { [`#type`]: type, [`#key`]: key },
+      ),
+      ExpressionAttributeValues: itemKeys.reduce(
+        (accumulator, k, index) => ({
+          ...accumulator,
+          [`:value${index}`]: item[k],
+        }),
+        {},
+      ),
+      Key: {
+        [pk]: id,
+      },
+      ReturnValues: 'UPDATED_NEW',
+    };
+    this.logger.log(JSON.stringify(params));
+    return await this.docClient.send(new UpdateCommand(params));
+  }
+
+  async updateMap(item: any, type: string, id: string) {
+    const key = randomUUID().toString();
+    const pk = 'id';
+    const itemKeys = Object.keys(item).filter((k) => k !== pk);
+    const params: UpdateCommandInput = {
+      TableName: this.tableName,
+      UpdateExpression: `SET #type.#key = :value`,
+      ExpressionAttributeValues: {
+        ':value': { ...item },
+      },
+      ExpressionAttributeNames: {
+        '#type': type,
+        '#key': key,
+      },
+      Key: {
+        [pk]: id,
+      },
+      ReturnValues: 'UPDATED_NEW',
+    };
+    this.logger.log(JSON.stringify(params));
+    return await this.docClient.send(new UpdateCommand(params));
+  }
+
+  async bulkLoadItem(item: any, type: string, id: string) {
+    const pk = 'id';
+    const itemKeys = Object.keys(item);
+    const params: UpdateCommandInput = {
+      TableName: this.tableName,
+      UpdateExpression: `SET ${itemKeys
+        .map((k, index) => `#type.#field${index} = :value${index}`)
+        .join(', ')}`,
+      ExpressionAttributeNames: itemKeys.reduce(
+        (accumulator, k, index) => ({
+          ...accumulator,
+          [`#field${index}`]: k,
+        }),
+        { '#type': type },
+      ),
+      ExpressionAttributeValues: itemKeys.reduce(
+        (accumulator, k, index) => ({
+          ...accumulator,
+          [`:value${index}`]: item[k],
+        }),
+        {},
+      ),
+      Key: {
+        [pk]: id,
+      },
+      ReturnValues: 'ALL_NEW',
+    };
+    this.logger.log(JSON.stringify(params));
+    return await this.docClient.send(new UpdateCommand(params));
   }
 }
