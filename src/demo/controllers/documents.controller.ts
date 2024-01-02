@@ -98,7 +98,7 @@ export class DocumentsController {
           .processPDF(s3Uri)
           .then(async (data: string[]) => {
             this.logger.log(data);
-            for (let i = 1; i <= data.length; i++) {
+            for (let i = 0; i < data.length; i++) {
               let index = data[i].lastIndexOf('.');
               let fileName = data[i];
               if (index > -1) {
@@ -127,7 +127,7 @@ export class DocumentsController {
           page: '0',
         };
         documentsData['0'] = documentData;
-        return this.repository.bulkLoadDocuments(documentData, id);
+        return this.repository.bulkLoadDocuments(documentsData, id);
       });
     }
 
