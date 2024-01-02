@@ -15,8 +15,8 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileS3Serivce } from '../services/files3.service';
 import { ApiConsumes, ApiBody } from '@nestjs/swagger';
-import { HttpService } from '@nestjs/axios';
 import { Document } from '../models/model';
+import { ExtractionService } from '../services/extraction.service';
 
 @Controller('documents')
 export class DocumentsController {
@@ -24,7 +24,7 @@ export class DocumentsController {
   constructor(
     private readonly repository: DemoRepository,
     private readonly fileService: FileS3Serivce,
-    private readonly httpService: HttpService,
+    private readonly extractionService: ExtractionService,
   ) {}
 
   @Get(':id')
@@ -94,12 +94,8 @@ export class DocumentsController {
         page: 'master',
       };
       if (file.mimetype === 'application/pdf') {
-        return this.httpService.axiosRef
-          .get(
-            'https://lumenai.eucloid.com/api/processpdf?url=' +
-              encodeURIComponent(s3Uri),
-          )
-          .then((response) => response.data)
+        return this.extractionService
+          .processPDF(s3Uri)
           .then(async (data: string[]) => {
             this.logger.log(data);
             for (let i = 1; i <= data.length; i++) {
@@ -123,22 +119,16 @@ export class DocumentsController {
             return this.repository.bulkLoadDocuments(documentsData, id);
           });
       }
-      return this.httpService.axiosRef
-        .get(
-          'https://lumenai.eucloid.com/api/processimage?url=' +
-            encodeURIComponent(s3Uri),
-        )
-        .then((response) => response.data)
-        .then((data) => {
-          this.logger.log(data);
-          let documentData: Document = {
-            url: data,
-            displayUrl: s3Response.Location || '',
-            page: '0',
-          };
-          documentsData['0'] = documentData;
-          return this.repository.bulkLoadDocuments(documentData, id);
-        });
+      return this.extractionService.processImage(s3Uri).then((data) => {
+        this.logger.log(data);
+        let documentData: Document = {
+          url: data,
+          displayUrl: s3Response.Location || '',
+          page: '0',
+        };
+        documentsData['0'] = documentData;
+        return this.repository.bulkLoadDocuments(documentData, id);
+      });
     }
 
     return null;
