@@ -182,8 +182,39 @@ export abstract class BaseRepository<T> {
     return await this.docClient.send(new UpdateCommand(params));
   }
 
-  async updateMap(item: any, type: string, id: string, key?: string) {
-    if (!key) key = randomUUID().toString();
+  async updateMapItem(item: any, type: string, id: string, key: string) {
+    const pk = 'id';
+    const itemKeys = Object.keys(item).filter((k) => k !== pk);
+    const params: UpdateCommandInput = {
+      TableName: this.tableName,
+      UpdateExpression: `SET ${itemKeys
+        .map((k, index) => `#type.#key.#field${index} = :value${index}`)
+        .join(', ')}`,
+      ExpressionAttributeNames: itemKeys.reduce(
+        (accumulator, k, index) => ({
+          ...accumulator,
+          [`#field${index}`]: k,
+        }),
+        { [`#type`]: type, [`#key`]: key },
+      ),
+      ExpressionAttributeValues: itemKeys.reduce(
+        (accumulator, k, index) => ({
+          ...accumulator,
+          [`:value${index}`]: item[k],
+        }),
+        {},
+      ),
+      Key: {
+        [pk]: id,
+      },
+      ReturnValues: 'UPDATED_NEW',
+    };
+    this.logger.log(JSON.stringify(params));
+    return await this.docClient.send(new UpdateCommand(params));
+  }
+
+  async updateMap(item: any, type: string, id: string) {
+    const key = randomUUID().toString();
     const pk = 'id';
     const itemKeys = Object.keys(item).filter((k) => k !== pk);
     const params: UpdateCommandInput = {
@@ -199,7 +230,7 @@ export abstract class BaseRepository<T> {
       Key: {
         [pk]: id,
       },
-      ReturnValues: 'ALL_NEW',
+      ReturnValues: 'UPDATED_NEW',
     };
     this.logger.log(JSON.stringify(params));
     return await this.docClient.send(new UpdateCommand(params));

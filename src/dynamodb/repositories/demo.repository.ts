@@ -34,24 +34,32 @@ export class DemoRepository extends BaseRepository<Record> {
     return this.updateItem(contact, UpdateEntity.Customer, id);
   }
 
-  updateLabels(labels: Partial<Label>, id: string, key?: string): Promise<any> {
-    return this.updateMap(labels, UpdateEntity.Label, id, key);
+  createLabels(labels: Partial<Label>, id: string): Promise<any> {
+    return this.updateMap(labels, UpdateEntity.Label, id);
   }
 
-  updateDocument(
-    document: Partial<Document>,
-    id: string,
-    key?: string,
-  ): Promise<any> {
-    return this.updateMap(document, UpdateEntity.Document, id, key);
+  updateLabels(labels: Partial<Label>, id: string, key: string): Promise<any> {
+    return this.updateMapItem(labels, UpdateEntity.Label, id, key);
+  }
+
+  updateDocument(document: Partial<Document>, id: string): Promise<any> {
+    return this.updateMap(document, UpdateEntity.Document, id);
   }
 
   updateExtractions(
     extractions: Partial<Extractions>,
     id: string,
+    key: string,
+  ): Promise<any> {
+    return this.updateMapItem(extractions, UpdateEntity.Extractions, id, key);
+  }
+
+  createExtractions(
+    extractions: Partial<Extractions>,
+    id: string,
     key?: string,
   ): Promise<any> {
-    return this.updateMap(extractions, UpdateEntity.Extractions, id, key);
+    return this.updateMap(extractions, UpdateEntity.Extractions, id);
   }
 
   bulkLoadDocuments(documents: any, id: string): Promise<any> {
