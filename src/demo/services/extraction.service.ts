@@ -11,7 +11,9 @@ export class ExtractionService {
     private config: ConfigService,
     private httpService: HttpService,
   ) {
-    this.API_ENDPOINT = this.config.get<string>('API_ENDPOINT') || '';
+    this.API_ENDPOINT =
+      this.config.get<string>('EXTRACTION_API_ENDPOINT') || '';
+    this.logger.log(`API_ENDPOINT: ${this.API_ENDPOINT}`);
   }
 
   async processImage(url: string) {
