@@ -1,16 +1,18 @@
-import { Logger } from '@nestjs/common';
+import { Logger, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { Extractions } from '../models/model';
 
+@Injectable()
 export class ExtractionService {
   private readonly logger = new Logger(ExtractionService.name);
-  private readonly API_ENDPOINT: string =
-    this.config.get<string>('API_ENDPOINT') || '';
+  private readonly API_ENDPOINT: string;
   constructor(
-    private readonly config: ConfigService,
-    private readonly httpService: HttpService,
-  ) {}
+    private config: ConfigService,
+    private httpService: HttpService,
+  ) {
+    this.API_ENDPOINT = this.config.get<string>('API_ENDPOINT') || '';
+  }
 
   async processImage(url: string) {
     return this.httpService.axiosRef
