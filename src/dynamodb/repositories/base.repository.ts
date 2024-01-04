@@ -38,7 +38,7 @@ export abstract class BaseRepository<T> {
   readonly logger = new Logger(BaseRepository.name);
   protected abstract tableName: string;
 
-  constructor(private readonly docClient: DynamoDBDocumentClient) {}
+  constructor(protected readonly docClient: DynamoDBDocumentClient) {}
 
   async get(key: Partial<T>): Promise<T | null> {
     const { Item } = await this.docClient.send(
@@ -138,12 +138,15 @@ export abstract class BaseRepository<T> {
             extractions: {
               M: {},
             },
+            createdAt: { S: new Date().toISOString() },
           },
         }),
       )
       .then((data) => {
         this.logger.log(data);
-        return id;
+        return {
+          session_id: id,
+        };
       })
       .catch((error) => {
         this.logger.error(error);
@@ -258,6 +261,24 @@ export abstract class BaseRepository<T> {
         }),
         {},
       ),
+      Key: {
+        [pk]: id,
+      },
+      ReturnValues: 'ALL_NEW',
+    };
+    this.logger.log(JSON.stringify(params));
+    return await this.docClient.send(new UpdateCommand(params));
+  }
+
+  async deleteMapItem(type: string, id: string, key: string) {
+    const pk = 'id';
+    const params: UpdateCommandInput = {
+      TableName: this.tableName,
+      UpdateExpression: `REMOVE #type.#key`,
+      ExpressionAttributeNames: {
+        '#type': type,
+        '#key': key,
+      },
       Key: {
         [pk]: id,
       },

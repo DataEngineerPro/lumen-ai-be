@@ -2,6 +2,7 @@ import { DemoRepository } from 'src/dynamodb/repositories/demo.repository';
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Logger,
   NotFoundException,
@@ -23,10 +24,10 @@ export class ExtractionsController {
   @Get(':id')
   async get(@Param('id') id: string): Promise<any> {
     const item = await this.repository.getById(id);
-
+    this.logger.log(item);
     if (item) {
       this.logger.log(item.extractions);
-      return item.labels;
+      return item.extractions;
     }
 
     throw new NotFoundException('Invalid!');
@@ -38,7 +39,6 @@ export class ExtractionsController {
     @Body() body: Extractions,
   ): Promise<any> {
     return this.extractionService.performExtraction(body).then((data) => {
-      this.logger.log(data);
       body.extractedText = data;
       return this.repository.createExtractions(body, id);
     });
@@ -50,7 +50,14 @@ export class ExtractionsController {
     @Param('key') key: string,
     @Body() body: Extractions,
   ): Promise<any> {
-    this.logger.log(`PUT ${id}-${key}-${body}`);
     return this.repository.updateExtractions(body, id, key);
+  }
+
+  @Delete(':id/:key')
+  async delete(
+    @Param('id') id: string,
+    @Param('key') key: string,
+  ): Promise<any> {
+    return this.repository.removeExtraction(id, key);
   }
 }

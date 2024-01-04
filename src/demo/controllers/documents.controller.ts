@@ -94,39 +94,19 @@ export class DocumentsController {
         page: 'master',
       };
       if (file.mimetype === 'application/pdf') {
-        return this.extractionService
-          .processPDF(s3Uri)
-          .then(async (data: string[]) => {
-            this.logger.log(data);
-            for (let i = 0; i < data.length; i++) {
-              let index = data[i].lastIndexOf('.');
-              let fileName = data[i];
-              if (index > -1) {
-                fileName =
-                  data[i].substring(0, index) +
-                  '_bw' +
-                  data[i].substring(index);
-              }
-              this.logger.log('Processing : ' + data[i] + ' got : ' + fileName);
-              let documentData: Document = {
-                url: fileName,
-                displayUrl: data[i],
-                page: i.toString(),
-              };
-              documentsData[i.toString()] = documentData;
-            }
-            this.logger.log(documentsData);
-            return this.repository.bulkLoadDocuments(documentsData, id);
-          });
+        return this.extractionService.processPDF(s3Uri).then(async (data) => {
+          this.logger.log(data);
+          const pagesToProcess = data.length > 25 ? 25 : data.length;
+          for (let i = 0; i < pagesToProcess; i++) {
+            documentsData[data[i].page] = data[i];
+          }
+          this.logger.log(documentsData);
+          return this.repository.bulkLoadDocuments(documentsData, id);
+        });
       }
       return this.extractionService.processImage(s3Uri).then((data) => {
         this.logger.log(data);
-        let documentData: Document = {
-          url: data,
-          displayUrl: s3Response.Location || '',
-          page: '0',
-        };
-        documentsData['0'] = documentData;
+        documentsData[data.page] = data;
         return this.repository.bulkLoadDocuments(documentsData, id);
       });
     }

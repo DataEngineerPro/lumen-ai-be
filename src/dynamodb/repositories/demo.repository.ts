@@ -2,6 +2,8 @@ import { Contact, Extractions, Label } from 'src/demo/models/model';
 import { DynamoDBRepository } from '../dynamodb.decorator';
 import { BaseRepository } from './base.repository';
 import { Record, Document } from 'src/demo/models/model';
+import { ConfigService } from '@nestjs/config';
+import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
 export interface Demo {
   id: string;
@@ -16,8 +18,15 @@ enum UpdateEntity {
 
 @DynamoDBRepository()
 export class DemoRepository extends BaseRepository<Record> {
-  protected tableName = 'lumenai_demo';
-
+  protected readonly tableName: string;
+  constructor(
+    protected docClient: DynamoDBDocumentClient,
+    private configService: ConfigService,
+  ) {
+    super(docClient);
+    this.tableName = this.configService.get<string>('DYNAMODB_TABLE') || '';
+    this;
+  }
   getById(id: string): Promise<Record | null> {
     return this.get({ id });
   }
@@ -64,5 +73,9 @@ export class DemoRepository extends BaseRepository<Record> {
 
   bulkLoadDocuments(documents: any, id: string): Promise<any> {
     return this.bulkLoadItem(documents, UpdateEntity.Document, id);
+  }
+
+  removeExtraction(id: string, key: string): Promise<any> {
+    return this.deleteMapItem(UpdateEntity.Extractions, id, key);
   }
 }
