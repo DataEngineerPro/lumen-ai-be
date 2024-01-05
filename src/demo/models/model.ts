@@ -20,7 +20,7 @@ export class Contact {
   usecase?: string;
 
   @ApiProperty()
-  comments?: string;
+  feedback?: string;
 }
 
 export class Label {
@@ -65,7 +65,7 @@ export class Extractions {
   extractedText: string;
 
   @ApiProperty()
-  userEnteredText: string;
+  userText: string;
 
   @ApiProperty()
   comments: string;
