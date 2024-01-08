@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class Contact {
   @ApiProperty()
-  name: string;
+  fullname: string;
 
   @ApiProperty()
   workemail: string;

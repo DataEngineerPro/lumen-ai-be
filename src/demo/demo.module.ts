@@ -6,6 +6,7 @@ import { FileS3Serivce } from './services/files3.service';
 import { DocumentsController } from './controllers/documents.controller';
 import { HttpModule } from '@nestjs/axios';
 import { ExtractionService } from './services/extraction.service';
+import { EmailService } from './services/email.service';
 
 @Module({
   imports: [HttpModule],
@@ -15,6 +16,6 @@ import { ExtractionService } from './services/extraction.service';
     ExtractionsController,
     DocumentsController,
   ],
-  providers: [FileS3Serivce, ExtractionService],
+  providers: [FileS3Serivce, ExtractionService, EmailService],
 })
 export class DemoModule {}
