@@ -1,0 +1,8 @@
+{
+  "Template": {
+    "TemplateName": "Accquisition",
+    "SubjectPart": "New Customer Accquired {{customer.fullname}}",
+    "HtmlPart": "<h1>Congratulations!</h1><p>We have acquired new customer as below:</p><dl><dt>Name</dt><dd>{{customer.fullname}}</dd><dt>Email</dt><dd>{{customer.workemail}}</dd><dt>Phone</dt><dd>{{customer.phone}}</dd><dt>Company</dt><dd>{{customer.company}}</dd><dt>Country</dt><dd>{{customer.country}}</dd><dt>Use Case</dt><dd>{{customer.usecase}}</dd></dl><p>Thank you!</p>",
+    "TextPart": "Congratulations\n\nWe have acquired new customer as below:\nName: {{customer.fullname}}\nEmail: {{customer.workemail}}\nPhone: {{customer.phone}}\nCompany: {{customer.company}}\nCountry: {{customer.country}}\nUse Case: {{customer.usecase}}\n\nThank you!"
+  }
+}

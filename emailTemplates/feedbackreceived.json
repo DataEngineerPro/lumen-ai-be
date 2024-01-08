@@ -1,0 +1,8 @@
+{
+  "Template": {
+    "TemplateName": "Feedback",
+    "SubjectPart": "Feedback received from {{customer.fullname}}",
+    "HtmlPart": "<h2>Feedback!</h2><p>Feedback Received <strong>{{customer.feedback}}</strong> from following customer:</p><dl><dt>Name</dt><dd>{{customer.fullname}}</dd><dt>Email</dt><dd>{{customer.workemail}}</dd><dt>Phone</dt><dd>{{customer.phone}}</dd><dt>Company</dt><dd>{{customer.company}}</dd><dt>Country</dt><dd>{{customer.country}}</dd><dt>Use Case</dt><dd>{{customer.usecase}}</dd></dl><h2>Labels</h2><table border='1'><thead><tr><th>Label</th><th>ExtractedText</th><th>User Correction</th><th>Comments</th></tr></thead><tbody>{{#each extractionsArray}}<tr><td>{{labelText}}</td><td>{{extractedText}}</td><td>{{userText}}</td><td>{{comments}}</td></tr>{{/each}}</tbody></table><p>Thank you!</p>",
+    "TextPart": "Feedback!\n\nFeedback received - \"{{customer.feedback}}\"\n\n Customer Details:\nName: {{customer.fullname}}\nEmail: {{customer.workemail}}\nPhone: {{customer.phone}}\nCompany: {{customer.company}}\nCountry: {{customer.country}}\nUse Case: {{customer.usecase}}\n\nLabels\n\n{{#each extractionsArray}}labelText-{{labelText}}, ExtractedText-{{extractedText}}, User Correction-{{userText}}, Comments-{{comments}}\n{{/each}}\nThank you!"
+  }
+}
