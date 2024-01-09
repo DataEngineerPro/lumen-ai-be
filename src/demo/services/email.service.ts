@@ -9,6 +9,7 @@ export class EmailService {
   readonly VERIFIED_EMAIL: string;
   readonly TO_EMAIL: string;
   readonly CC_EMAIL: string[];
+
   constructor(private readonly config: ConfigService) {
     this.client = new SESClient({
       credentials: {
@@ -19,7 +20,9 @@ export class EmailService {
     });
     this.VERIFIED_EMAIL = this.config.get<string>('EMAIL_FROM') || '';
     this.TO_EMAIL = this.config.get<string>('EMAIL_TO') || '';
+
     this.CC_EMAIL = this.config.get<string>('EMAIL_CC')?.split(',') || [];
+
   }
 
   async sendEmail(template: string, data: any) {
