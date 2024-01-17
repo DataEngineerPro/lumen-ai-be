@@ -74,6 +74,9 @@ export class DocumentsController {
     @Param('id') id: string,
   ): Promise<any> {
     const { originalname, mimetype, buffer } = file;
+    const sanitizedName = originalname
+      .replace(/[^a-z0-9]/gi, '_')
+      .toLowerCase();
     if (file.size > 3 * 1024 * 1024) {
       return new BadRequestException("File size can't be more than 3MB");
     }
@@ -86,7 +89,7 @@ export class DocumentsController {
     }
     const s3Response = await this.fileService.uploadFile(file, id);
     if (s3Response) {
-      let s3Uri = `s3://${this.fileService.Bucket}/${id}/${originalname}`;
+      let s3Uri = `s3://${this.fileService.Bucket}/${id}/${sanitizedName}`;
       this.logger.log(s3Uri);
       let documentsData: { [k: string]: any } = {};
       documentsData['master'] = {
