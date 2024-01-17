@@ -36,11 +36,13 @@ export class FileS3Serivce {
 
   async uploadFile(file: Express.Multer.File, id: string) {
     const { originalname } = file;
-
+    const sanitizedName = originalname
+      .replace(/[^a-z0-9]/gi, '_')
+      .toLowerCase();
     return await this.s3_upload(
       file.buffer,
       this.Bucket,
-      originalname,
+      sanitizedName,
       file.mimetype,
       id,
     );
