@@ -18,4 +18,4 @@ import { EmailService } from './services/email.service';
   ],
   providers: [FileS3Serivce, ExtractionService, EmailService],
 })
-export class DemoModule {}
+export class DemoModule { }
